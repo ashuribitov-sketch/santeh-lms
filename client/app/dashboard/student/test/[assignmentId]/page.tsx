@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   Button,
   Card,
@@ -45,9 +45,8 @@ interface Answer {
 }
 
 export default function TakeTestPage() {
-  const pathname = usePathname();
-  const segments = pathname.split('/');
-  const assignmentId = segments[segments.length - 1];
+  const params = useParams();
+  const assignmentId = params.assignmentId as string;
   const { message } = App.useApp();
 
   const [loading, setLoading] = useState(true);

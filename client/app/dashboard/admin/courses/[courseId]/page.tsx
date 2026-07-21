@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button, Card, Modal, Input, Select, message, Space, Typography, Tabs, Upload, Popconfirm } from 'antd';
 import { PlusOutlined, UploadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import Link from 'next/link';
@@ -16,9 +16,8 @@ const titleStyle: React.CSSProperties = {
 };
 
 export default function CourseManagePage() {
-  const pathname = usePathname();
-  const segments = pathname.split('/');
-  const courseId = segments[segments.length - 1];
+  const params = useParams();
+  const courseId = params.courseId as string;
 
   const [courseTitle, setCourseTitle] = useState('');
 
