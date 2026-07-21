@@ -10,6 +10,7 @@ const { Title } = Typography;
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -18,6 +19,15 @@ export default function AdminDashboard() {
         window.location.href = '/';
       } else {
         setUser(user);
+        // Загружаем полное имя из profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        if (profile?.full_name) {
+          setFullName(profile.full_name);
+        }
       }
     };
     getUser();
@@ -28,7 +38,7 @@ export default function AdminDashboard() {
   return (
     <div>
       <Title level={2}>Кабинет администратора</Title>
-      <p>Добро пожаловать, {user.email}!</p>
+      <p>Добро пожаловать, {fullName || user.email}!</p>
       <div style={{ margin: '20px 0' }}>
         <Link href="/dashboard/admin/courses">
           <Button type="primary">Управление курсами и тестами</Button>

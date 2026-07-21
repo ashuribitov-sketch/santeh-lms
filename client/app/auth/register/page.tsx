@@ -2,97 +2,130 @@
 
 import { useState, Suspense } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Button, Card, Form, Input, Typography, App } from 'antd';
+import { MailOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
+import Link from 'next/link';
+
+const { Title, Text } = Typography;
 
 function RegisterForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const role = searchParams.get('role') || 'student';
+  const { message } = App.useApp();
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
+  const onFinish = async (values: {
+    fullName: string;
+    email: string;
+    password: string;
+  }) => {
+    setLoading(true);
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: values.email,
+      password: values.password,
       options: {
         data: {
+          full_name: values.fullName,
           role: 'student',
-          full_name: fullName, // передаём ФИО
         },
       },
     });
 
     if (error) {
-      setError(error.message);
+      message.error(error.message);
+      setLoading(false);
       return;
     }
 
-    if (!data.user) {
-      setError('Не удалось создать пользователя. Попробуйте позже.');
-      return;
+    if (data.user) {
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+      router.push('/dashboard/student');
     }
-
-    if (data.session) {
-      await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-    }
-
-    window.location.href = '/dashboard/student';
+    setLoading(false);
   };
 
-  if (role !== 'student') {
-    return null;
-  }
+  // Если роль не student — не показываем форму (это для безопасности)
+  if (role !== 'student') return null;
 
   return (
-    <div style={{ maxWidth: 400, margin: '50px auto' }}>
-      <h1>Регистрация ученика</h1>
-      <form onSubmit={handleRegister}>
-        <div>
-          <label>ФИО:</label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            placeholder="Иванов Иван Иванович"
-          />
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #e6f0ff 0%, #b3d4ff 100%)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+      }}
+    >
+      <Card
+        style={{
+          width: 420,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          borderRadius: 12,
+        }}
+        bodyStyle={{ padding: '32px 24px' }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <span style={{ fontSize: 48 }}>🧑‍🔧</span>
+          <Title level={3} style={{ margin: '16px 0 8px' }}>
+            Регистрация ученика
+          </Title>
+          <Text type="secondary">Создайте аккаунт для обучения</Text>
         </div>
-        <div>
-          <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+
+        <Form layout="vertical" onFinish={onFinish} size="large">
+          <Form.Item
+            name="fullName"
+            rules={[{ required: true, message: 'Введите ваше ФИО' }]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="ФИО" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: 'Введите email' },
+              { type: 'email', message: 'Некорректный email' },
+            ]}
+          >
+            <Input prefix={<MailOutlined />} placeholder="Email" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            rules={[
+              { required: true, message: 'Введите пароль' },
+              { min: 6, message: 'Минимум 6 символов' },
+            ]}
+          >
+            <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={loading} block>
+              Зарегистрироваться
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <div style={{ textAlign: 'center' }}>
+          <Text>
+            Уже есть аккаунт? <Link href="/auth/login">Войти</Link>
+          </Text>
         </div>
-        <div>
-          <label>Пароль (минимум 6 символов):</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Зарегистрироваться</button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      </Card>
     </div>
   );
 }
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div>Загрузка...</div>}>
+    <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Загрузка...</div>}>
       <RegisterForm />
     </Suspense>
   );

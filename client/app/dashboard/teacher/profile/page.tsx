@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { Input, Button, message, Typography } from 'antd';
+import { Input, Button, App, Typography } from 'antd';
 
 const { Title } = Typography;
 
 export default function TeacherProfilePage() {
+  const { message } = App.useApp();
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
 
