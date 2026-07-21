@@ -8,6 +8,12 @@ import Link from 'next/link';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
 export default function TeacherResultsPage() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +111,7 @@ export default function TeacherResultsPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Результаты тестов</Title>
+      <Title level={2} style={titleStyle}>Результаты тестов</Title>
       <Table
         dataSource={results}
         columns={columns}

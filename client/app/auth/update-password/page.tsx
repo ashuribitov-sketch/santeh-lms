@@ -1,41 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Form, Input, Typography, App } from 'antd';
-import { MailOutlined, LockOutlined } from '@ant-design/icons';
-import Link from 'next/link';
+import { LockOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
-export default function LoginPage() {
+export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { message } = App.useApp();
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  // При загрузке страницы проверяем, есть ли сессия с токеном сброса
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) {
+        message.error('Недействительная или истекшая ссылка сброса пароля');
+        router.push('/auth/login');
+      }
+    };
+    checkSession();
+  }, []);
+
+  const onFinish = async (values: { password: string }) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: values.email,
+    const { error } = await supabase.auth.updateUser({
       password: values.password,
     });
 
     if (error) {
       message.error(error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      const role = profile?.role || 'student';
-      router.push(`/dashboard/${role}`);
+    } else {
+      message.success('Пароль успешно обновлён! Сейчас вы будете перенаправлены на вход.');
+      await supabase.auth.signOut(); // выходим, чтобы пользователь заново вошёл с новым паролем
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 1500);
     }
     setLoading(false);
   };
@@ -51,50 +54,47 @@ export default function LoginPage() {
       </div>
 
       <div style={styles.cardWrapper}>
-        <Title level={2} style={styles.mainTitle}>Стань профессионалом</Title>
-        <Text style={styles.subTitle}>Обучение сантехнике от теории к практике</Text>
-
+        <Title level={2} style={styles.mainTitle}>Новый пароль</Title>
         <Card style={styles.card} styles={{ body: { padding: '32px 24px' } }}>
           <div style={styles.cardHeader}>
-            <span style={styles.logoIcon}>🛠️</span>
-            <Title level={3} style={styles.cardTitle}>Добро пожаловать</Title>
-            <Text style={styles.cardSubtitle}>Войдите в аккаунт</Text>
+            <span style={styles.logoIcon}>🔒</span>
+            <Title level={3} style={styles.cardTitle}>Установите новый пароль</Title>
+            <Text style={styles.cardSubtitle}>Минимум 6 символов</Text>
           </div>
 
           <Form layout="vertical" onFinish={onFinish} size="large">
             <Form.Item
-              name="email"
+              name="password"
               rules={[
-                { required: true, message: 'Введите email' },
-                { type: 'email', message: 'Некорректный email' },
+                { required: true, message: 'Введите новый пароль' },
+                { min: 6, message: 'Минимум 6 символов' },
               ]}
             >
-              <Input prefix={<MailOutlined style={{ color: 'rgba(255,255,255,0.7)' }} />} placeholder="Email" style={styles.input} />
+              <Input.Password prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.7)' }} />} placeholder="Новый пароль" style={styles.input} />
             </Form.Item>
             <Form.Item
-              name="password"
-              rules={[{ required: true, message: 'Введите пароль' }]}
+              name="confirm"
+              dependencies={['password']}
+              rules={[
+                { required: true, message: 'Подтвердите пароль' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('password') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('Пароли не совпадают'));
+                  },
+                }),
+              ]}
             >
-              <Input.Password prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.7)' }} />} placeholder="Пароль" style={styles.input} />
+              <Input.Password prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.7)' }} />} placeholder="Подтвердите пароль" style={styles.input} />
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={loading} block style={styles.button}>
-                Войти
+                Сохранить пароль
               </Button>
             </Form.Item>
           </Form>
-
-          <div style={{ textAlign: 'center', marginTop: 8 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
-              <Link href="/auth/forgot-password" style={{ color: '#4da8ff' }}>Забыли пароль?</Link>
-            </Text>
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Нет аккаунта?{' '}
-              <Link href="/auth/register?role=student" style={{ color: '#4da8ff' }}>Зарегистрироваться</Link>
-            </Text>
-          </div>
         </Card>
       </div>
     </div>
@@ -148,14 +148,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#ffffff',
     fontWeight: 700,
     fontSize: 28,
-    marginBottom: 8,
+    marginBottom: 24,
     textShadow: '0 2px 10px rgba(0,86,185,0.5)',
-  },
-  subTitle: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 16,
-    marginBottom: 32,
-    display: 'block',
   },
   card: {
     background: 'rgba(255, 255, 255, 0.08)',

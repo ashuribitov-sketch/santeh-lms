@@ -2,40 +2,26 @@
 
 import { useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
 import { Button, Card, Form, Input, Typography, App } from 'antd';
-import { MailOutlined, LockOutlined } from '@ant-design/icons';
+import { MailOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Title, Text } = Typography;
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const { message } = App.useApp();
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  const onFinish = async (values: { email: string }) => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
+    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+      redirectTo: 'http://localhost:3000/auth/update-password',
     });
 
     if (error) {
       message.error(error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      const role = profile?.role || 'student';
-      router.push(`/dashboard/${role}`);
+    } else {
+      message.success('Ссылка для сброса пароля отправлена на вашу почту!');
     }
     setLoading(false);
   };
@@ -51,14 +37,12 @@ export default function LoginPage() {
       </div>
 
       <div style={styles.cardWrapper}>
-        <Title level={2} style={styles.mainTitle}>Стань профессионалом</Title>
-        <Text style={styles.subTitle}>Обучение сантехнике от теории к практике</Text>
-
+        <Title level={2} style={styles.mainTitle}>Восстановление пароля</Title>
         <Card style={styles.card} styles={{ body: { padding: '32px 24px' } }}>
           <div style={styles.cardHeader}>
-            <span style={styles.logoIcon}>🛠️</span>
-            <Title level={3} style={styles.cardTitle}>Добро пожаловать</Title>
-            <Text style={styles.cardSubtitle}>Войдите в аккаунт</Text>
+            <span style={styles.logoIcon}>🔑</span>
+            <Title level={3} style={styles.cardTitle}>Забыли пароль?</Title>
+            <Text style={styles.cardSubtitle}>Введите email, и мы отправим вам ссылку для сброса</Text>
           </div>
 
           <Form layout="vertical" onFinish={onFinish} size="large">
@@ -71,28 +55,16 @@ export default function LoginPage() {
             >
               <Input prefix={<MailOutlined style={{ color: 'rgba(255,255,255,0.7)' }} />} placeholder="Email" style={styles.input} />
             </Form.Item>
-            <Form.Item
-              name="password"
-              rules={[{ required: true, message: 'Введите пароль' }]}
-            >
-              <Input.Password prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.7)' }} />} placeholder="Пароль" style={styles.input} />
-            </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={loading} block style={styles.button}>
-                Войти
+                Отправить ссылку
               </Button>
             </Form.Item>
           </Form>
 
-          <div style={{ textAlign: 'center', marginTop: 8 }}>
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
             <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
-              <Link href="/auth/forgot-password" style={{ color: '#4da8ff' }}>Забыли пароль?</Link>
-            </Text>
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <Text style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Нет аккаунта?{' '}
-              <Link href="/auth/register?role=student" style={{ color: '#4da8ff' }}>Зарегистрироваться</Link>
+              <Link href="/auth/login" style={{ color: '#4da8ff' }}>Вернуться ко входу</Link>
             </Text>
           </div>
         </Card>
@@ -148,14 +120,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#ffffff',
     fontWeight: 700,
     fontSize: 28,
-    marginBottom: 8,
+    marginBottom: 24,
     textShadow: '0 2px 10px rgba(0,86,185,0.5)',
-  },
-  subTitle: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 16,
-    marginBottom: 32,
-    display: 'block',
   },
   card: {
     background: 'rgba(255, 255, 255, 0.08)',

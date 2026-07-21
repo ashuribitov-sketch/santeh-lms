@@ -9,6 +9,12 @@ import Link from 'next/link';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
 export default function StudentCoursePage() {
   const pathname = usePathname();
   const segments = pathname.split('/');
@@ -45,10 +51,7 @@ export default function StudentCoursePage() {
       .select('test_id')
       .eq('user_id', user.id);
 
-    if (!assignments?.length) {
-      setTests([]);
-      return;
-    }
+    if (!assignments?.length) { setTests([]); return; }
 
     const assignedTestIds = assignments.map(a => a.test_id);
 
@@ -63,7 +66,7 @@ export default function StudentCoursePage() {
 
   const materialsTab = (
     <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
-      {materials.length === 0 && <p>Материалы пока не добавлены.</p>}
+      {materials.length === 0 && <p style={{ color: '#fff' }}>Материалы пока не добавлены.</p>}
       {materials.map((m) => (
         <Card key={m.id} title={m.title}>
           <p>{m.description}</p>
@@ -79,7 +82,7 @@ export default function StudentCoursePage() {
 
   const testsTab = (
     <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
-      {tests.length === 0 && <p>Нет доступных тестов в этом курсе.</p>}
+      {tests.length === 0 && <p style={{ color: '#fff' }}>Нет доступных тестов в этом курсе.</p>}
       {tests.map((test) => (
         <Card key={test.id} title={test.title}>
           <p>Время на тест: {test.time_limit_seconds} сек</p>
@@ -91,16 +94,19 @@ export default function StudentCoursePage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Курс: {courseTitle}</Title>
-      <Tabs defaultActiveKey="materials" items={[
-        { key: 'materials', label: 'Материалы', children: materialsTab },
-        { key: 'tests', label: 'Тесты', children: testsTab },
-      ]} />
+      <Title level={2} style={titleStyle}>Курс: {courseTitle}</Title>
+      <Tabs 
+        defaultActiveKey="materials" 
+        items={[
+          { key: 'materials', label: <span style={{ color: '#fff' }}>Материалы</span>, children: materialsTab },
+          { key: 'tests', label: <span style={{ color: '#fff' }}>Тесты</span>, children: testsTab },
+        ]} 
+        tabBarStyle={{ color: '#fff' }}
+      />
     </div>
   );
 }
 
-// Компонент-помощник для получения assignment_id по test_id
 function AssignmentLink({ testId }: { testId: string }) {
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
 

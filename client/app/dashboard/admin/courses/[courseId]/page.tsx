@@ -9,14 +9,19 @@ import Link from 'next/link';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
 export default function CourseManagePage() {
-  const pathname = usePathname(); // полный путь типа /dashboard/admin/courses/xxx
-  // Извлекаем UUID из пути: последний сегмент
+  const pathname = usePathname();
   const segments = pathname.split('/');
-  const courseId = segments[segments.length - 1]; // это и есть наш UUID
+  const courseId = segments[segments.length - 1];
 
   const [courseTitle, setCourseTitle] = useState('');
-  
+
   // === Тесты ===
   const [tests, setTests] = useState<any[]>([]);
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
@@ -34,11 +39,11 @@ export default function CourseManagePage() {
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (!courseId || courseId === 'undefined') return; // защита от битых id
-    console.log('Работаем с courseId:', courseId);
-    fetchCourse();
-    fetchTests();
-    fetchMaterials();
+    if (courseId && courseId !== 'undefined') {
+      fetchCourse();
+      fetchTests();
+      fetchMaterials();
+    }
   }, [courseId]);
 
   const fetchCourse = async () => {
@@ -72,14 +77,7 @@ export default function CourseManagePage() {
 
   // ------ МАТЕРИАЛЫ ------
   const fetchMaterials = async () => {
-    const { data, error } = await supabase
-      .from('materials')
-      .select('*')
-      .eq('course_id', courseId);
-    console.log('Загрузка материалов для курса:', courseId, 'результат:', data);
-    if (error) {
-      console.error('Ошибка загрузки материалов:', error);
-    }
+    const { data } = await supabase.from('materials').select('*').eq('course_id', courseId);
     setMaterials(data || []);
   };
 
@@ -88,7 +86,6 @@ export default function CourseManagePage() {
       message.warning('Выберите файл для загрузки');
       return;
     }
-
     const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
     const fileName = `${Date.now()}_${safeFileName}`;
 
@@ -116,9 +113,8 @@ export default function CourseManagePage() {
       file_type: file.name.split('.').pop()?.toLowerCase() || '',
     });
 
-    if (insertError) {
-      message.error('Ошибка сохранения: ' + insertError.message);
-    } else {
+    if (insertError) message.error('Ошибка сохранения: ' + insertError.message);
+    else {
       message.success('Материал добавлен!');
       setIsMaterialModalOpen(false);
       setMaterialTitle(''); setMaterialDescription(''); setFile(null);
@@ -126,7 +122,6 @@ export default function CourseManagePage() {
     }
   };
 
-  // Форма для тестов
   const testsContent = (
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsTestModalOpen(true)}>
@@ -143,7 +138,6 @@ export default function CourseManagePage() {
     </Space>
   );
 
-  // Форма для материалов
   const materialsContent = (
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsMaterialModalOpen(true)}>
@@ -160,7 +154,7 @@ export default function CourseManagePage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Курс: {courseTitle}</Title>
+      <Title level={2} style={titleStyle}>Курс: {courseTitle}</Title>
       <Tabs defaultActiveKey="tests" items={[
         { key: 'tests', label: 'Тесты', children: testsContent },
         { key: 'materials', label: 'Материалы', children: materialsContent },

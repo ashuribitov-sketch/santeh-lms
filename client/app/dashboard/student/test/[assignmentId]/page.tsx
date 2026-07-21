@@ -13,10 +13,21 @@ import {
   message,
   Progress,
   Input,
+  App,
 } from 'antd';
 import { ClockCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
+
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+};
+
+const textStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.9)',
+  textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+};
 
 interface Question {
   id: string;
@@ -37,6 +48,7 @@ export default function TakeTestPage() {
   const pathname = usePathname();
   const segments = pathname.split('/');
   const assignmentId = segments[segments.length - 1];
+  const { message } = App.useApp();
 
   const [loading, setLoading] = useState(true);
   const [testTitle, setTestTitle] = useState('');
@@ -95,13 +107,13 @@ export default function TakeTestPage() {
       return;
     }
 
-    // Проверяем существующую попытку (используем started_at вместо created_at)
+    // Проверяем существующую попытку
     const { data: existingResult } = await supabase
       .from('test_results')
       .select('id, status, answers, score, max_score')
       .eq('user_id', user.id)
       .eq('test_id', test.id)
-      .order('started_at', { ascending: false })  // <-- исправлено
+      .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -126,7 +138,6 @@ export default function TakeTestPage() {
         return;
       }
     } else {
-      // Создаём новую попытку
       const { data: newResult, error: insertError } = await supabase
         .from('test_results')
         .insert({
@@ -143,7 +154,7 @@ export default function TakeTestPage() {
 
       if (insertError) {
         console.error('Ошибка создания попытки:', insertError);
-        message.error('Не удалось начать тест: ' + insertError.message);
+        message.error('Не удалось начать тест');
         setLoading(false);
         return;
       }
@@ -151,7 +162,6 @@ export default function TakeTestPage() {
       setTestResultId(newResult.id);
     }
 
-    // Загружаем вопросы
     const { data: questionsData } = await supabase
       .from('questions')
       .select('*')
@@ -276,9 +286,7 @@ export default function TakeTestPage() {
 
       if (updateError) {
         console.error('Ошибка при сохранении результата:', updateError);
-        message.error('Результат не был сохранён: ' + updateError.message);
-      } else {
-        console.log('Результат успешно сохранён');
+        message.error('Результат не был сохранён');
       }
     } else {
       console.error('testResultId не установлен – результат некуда сохранять');
@@ -286,17 +294,17 @@ export default function TakeTestPage() {
     }
   };
 
-  if (loading) return <div style={{ padding: 40 }}>Загрузка теста...</div>;
+  if (loading) return <div style={{ padding: 40, color: '#fff' }}>Загрузка теста...</div>;
 
   if (isFinished) {
     return (
       <div style={{ padding: 24, maxWidth: 700, margin: '0 auto' }}>
-        <Title level={2}>{testTitle} — Результат</Title>
+        <Title level={2} style={titleStyle}>{testTitle} — Результат</Title>
         <Progress
           percent={Math.round((score / maxScore) * 100)}
           format={() => `${score}/${maxScore}`}
         />
-        <Text strong style={{ display: 'block', marginTop: 16 }}>
+        <Text strong style={{ display: 'block', marginTop: 16, ...textStyle }}>
           Статус:{' '}
           {status === 'passed'
             ? 'Сдал'
@@ -306,7 +314,7 @@ export default function TakeTestPage() {
         </Text>
 
         <div style={{ marginTop: 24 }}>
-          <Title level={4}>Разбор ответов</Title>
+          <Title level={4} style={textStyle}>Разбор ответов</Title>
           {questions.map((q, idx) => {
             const ans = answers[idx];
             const correct = ans?.is_correct;
@@ -369,10 +377,10 @@ export default function TakeTestPage() {
           alignItems: 'center',
         }}
       >
-        <Title level={3}>{testTitle}</Title>
+        <Title level={3} style={titleStyle}>{testTitle}</Title>
         <Space>
-          <ClockCircleOutlined />
-          <Text strong>
+          <ClockCircleOutlined style={{ color: '#fff' }} />
+          <Text strong style={textStyle}>
             {Math.floor(timeLeft / 60)}:
             {(timeLeft % 60).toString().padStart(2, '0')}
           </Text>

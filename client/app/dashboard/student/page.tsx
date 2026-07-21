@@ -8,6 +8,16 @@ import Link from 'next/link';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+};
+
+const textStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.9)',
+  textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+};
+
 interface AssignmentWithStatus {
   id: string;
   test: {
@@ -16,7 +26,7 @@ interface AssignmentWithStatus {
     time_limit_seconds: number;
   } | null;
   deadline: string | null;
-  resultStatus?: string | null; // 'passed', 'failed', 'timeout' или null если не завершён
+  resultStatus?: string | null;
 }
 
 interface CourseItem {
@@ -43,9 +53,7 @@ export default function StudentDashboard() {
           .select('full_name')
           .eq('id', user.id)
           .single();
-        if (profile?.full_name) {
-          setFullName(profile.full_name);
-        }
+        if (profile?.full_name) setFullName(profile.full_name);
         fetchAssignments(user.id);
         fetchCourses(user.id);
       }
@@ -54,18 +62,11 @@ export default function StudentDashboard() {
   }, []);
 
   const fetchAssignments = async (userId: string) => {
-    // Получаем назначения с информацией о тесте
     const { data } = await supabase
       .from('assignments')
       .select('id, test:tests(id, title, time_limit_seconds), deadline')
       .eq('user_id', userId);
-
-    if (!data) {
-      setAssignments([]);
-      return;
-    }
-
-    // Для каждого назначения проверяем, есть ли завершённый результат
+    if (!data) { setAssignments([]); return; }
     const enriched = await Promise.all(
       data.map(async (item: any) => {
         let resultStatus = null;
@@ -75,47 +76,29 @@ export default function StudentDashboard() {
             .select('status')
             .eq('user_id', userId)
             .eq('test_id', item.test.id)
-            .neq('status', 'in_progress')   // только завершённые
+            .neq('status', 'in_progress')
             .limit(1);
-          if (results && results.length > 0) {
-            resultStatus = results[0].status;
-          }
+          if (results && results.length > 0) resultStatus = results[0].status;
         }
         return { ...item, resultStatus };
       })
     );
-
     setAssignments(enriched);
   };
 
   const fetchCourses = async (userId: string) => {
-    // Получаем id тестов, которые назначены ученику
     const { data: assignedTests } = await supabase
       .from('assignments')
       .select('test_id')
       .eq('user_id', userId);
-
-    if (!assignedTests?.length) {
-      setCourses([]);
-      return;
-    }
-
+    if (!assignedTests?.length) { setCourses([]); return; }
     const testIds = assignedTests.map(a => a.test_id);
-
-    // Получаем course_id этих тестов
     const { data: tests } = await supabase
       .from('tests')
       .select('course_id')
       .in('id', testIds);
-
-    if (!tests?.length) {
-      setCourses([]);
-      return;
-    }
-
-    const courseIds = [...new Set(tests.map(t => t.course_id))]; // уникальные id
-
-    // Загружаем курсы
+    if (!tests?.length) { setCourses([]); return; }
+    const courseIds = [...new Set(tests.map(t => t.course_id))];
     const { data: coursesData } = await supabase
       .from('courses')
       .select('id, title, description')
@@ -125,10 +108,9 @@ export default function StudentDashboard() {
 
   if (!user) return <div>Загрузка...</div>;
 
-  // Вкладка с тестами
   const testsTab = (
     <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
-      {assignments.length === 0 && <p>У вас пока нет назначенных тестов.</p>}
+      {assignments.length === 0 && <p style={textStyle}>У вас пока нет назначенных тестов.</p>}
       {assignments.map((a) => {
         const isCompleted = !!a.resultStatus;
         return (
@@ -155,10 +137,9 @@ export default function StudentDashboard() {
     </Space>
   );
 
-  // Вкладка с курсами
   const coursesTab = (
     <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
-      {courses.length === 0 && <p>У вас пока нет доступных курсов.</p>}
+      {courses.length === 0 && <p style={textStyle}>У вас пока нет доступных курсов.</p>}
       {courses.map((course) => (
         <Card key={course.id} title={course.title}>
           <p>{course.description || 'Описание отсутствует'}</p>
@@ -172,11 +153,15 @@ export default function StudentDashboard() {
 
   return (
     <div>
-      <Title level={2}>Добро пожаловать, {fullName || user.email}!</Title>
-      <Tabs defaultActiveKey="tests" items={[
-        { key: 'tests', label: 'Мои тесты', children: testsTab },
-        { key: 'courses', label: 'Мои курсы', children: coursesTab },
-      ]} />
+      <Title level={2} style={titleStyle}>Добро пожаловать, {fullName || user.email}!</Title>
+      <Tabs 
+        defaultActiveKey="tests" 
+        items={[
+          { key: 'tests', label: <span style={{ color: '#fff' }}>Мои тесты</span>, children: testsTab },
+          { key: 'courses', label: <span style={{ color: '#fff' }}>Мои курсы</span>, children: coursesTab },
+        ]} 
+        tabBarStyle={{ color: '#fff' }}
+      />
     </div>
   );
 }

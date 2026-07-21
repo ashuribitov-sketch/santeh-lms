@@ -7,6 +7,12 @@ import dayjs from 'dayjs';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
 export default function AssignTestPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [tests, setTests] = useState<any[]>([]);
@@ -40,7 +46,6 @@ export default function AssignTestPage() {
     setStudents(profiles || []);
   };
 
-  // Фильтруем учеников по введённому имени
   const filteredStudents = useMemo(() => {
     if (!searchName.trim()) return students;
     const lower = searchName.toLowerCase();
@@ -90,7 +95,7 @@ export default function AssignTestPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Назначить тест ученику</Title>
+      <Title level={2} style={titleStyle}>Назначить тест ученику</Title>
       <Space orientation="vertical" size="large" style={{ width: '100%', maxWidth: 500 }}>
         <Select
           placeholder="Выберите курс"
@@ -110,7 +115,6 @@ export default function AssignTestPage() {
           />
         )}
 
-        {/* Поиск по ученикам */}
         <Input
           placeholder="Поиск ученика по имени"
           value={searchName}

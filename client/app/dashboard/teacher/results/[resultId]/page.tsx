@@ -9,6 +9,17 @@ import Link from 'next/link';
 
 const { Title, Text } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
+const textStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.9)',
+  textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+};
+
 interface Question {
   id: string;
   question_text: string;
@@ -98,7 +109,6 @@ export default function ResultDetailPage() {
     return <Text style={{ color: 'green' }}>{correct}</Text>;
   };
 
-  // Готовим массив items для Collapse
   const collapseItems = questions.map((q, idx) => {
     const answer = answers.find(a => a.question_id === q.id);
     const isCorrect = answer?.is_correct;
@@ -106,7 +116,7 @@ export default function ResultDetailPage() {
       key: q.id,
       label: (
         <Space>
-          <Text strong>{idx + 1}. {q.question_text}</Text>
+          <Text strong style={{ color: '#fff' }}>{idx + 1}. {q.question_text}</Text>
           {answer && (
             <Tag color={isCorrect ? 'green' : 'red'}>
               {isCorrect ? 'Верно' : 'Неверно'}
@@ -116,9 +126,9 @@ export default function ResultDetailPage() {
       ),
       children: (
         <div>
-          <p><Text strong>Тип вопроса:</Text> {q.question_type === 'single' ? 'Одиночный' : q.question_type === 'multiple' ? 'Множественный' : 'Открытый'}</p>
-          <p><Text strong>Ответ ученика:</Text> {renderAnswer(q, answer)}</p>
-          <p><Text strong>Правильный ответ:</Text> {renderCorrectAnswer(q)}</p>
+          <p><Text strong style={{ color: '#fff' }}>Тип вопроса:</Text> <Text>{q.question_type === 'single' ? 'Одиночный' : q.question_type === 'multiple' ? 'Множественный' : 'Открытый'}</Text></p>
+          <p><Text strong style={{ color: '#fff' }}>Ответ ученика:</Text> {renderAnswer(q, answer)}</p>
+          <p><Text strong style={{ color: '#fff' }}>Правильный ответ:</Text> {renderCorrectAnswer(q)}</p>
           {q.explanation && <p><Text type="secondary">Пояснение: {q.explanation}</Text></p>}
         </div>
       ),
@@ -131,7 +141,7 @@ export default function ResultDetailPage() {
         <Button icon={<ArrowLeftOutlined />} style={{ marginBottom: 16 }}>Назад к списку</Button>
       </Link>
 
-      <Title level={2}>Результат теста</Title>
+      <Title level={2} style={titleStyle}>Результат теста</Title>
       <Descriptions bordered column={1} size="middle" style={{ marginBottom: 24 }}>
         <Descriptions.Item label="Ученик">{studentName}</Descriptions.Item>
         <Descriptions.Item label="Тест">{result.test?.title}</Descriptions.Item>
@@ -142,7 +152,7 @@ export default function ResultDetailPage() {
         </Descriptions.Item>
       </Descriptions>
 
-      <Title level={3}>Разбор ответов</Title>
+      <Title level={3} style={textStyle}>Разбор ответов</Title>
       <Collapse accordion items={collapseItems} />
     </div>
   );

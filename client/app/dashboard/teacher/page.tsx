@@ -2,119 +2,60 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { Table, Tag, Typography, Button, Space } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
+import { User } from '@supabase/supabase-js';
+import { Button, Space, Typography } from 'antd';
 import Link from 'next/link';
 
 const { Title } = Typography;
 
-export default function TeacherResultsPage() {
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+};
+
+const textStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.9)',
+  textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+};
+
+export default function TeacherDashboard() {
+  const [user, setUser] = useState<User | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchResults();
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/';
+      } else {
+        setUser(user);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        if (profile?.full_name) {
+          setFullName(profile.full_name);
+        }
+      }
+    };
+    getUser();
   }, []);
 
-  const fetchResults = async () => {
-    // Запрос БЕЗ user:user_id (email) – только user_id
-    const { data, error } = await supabase
-      .from('test_results')
-      .select(`
-        id,
-        user_id,
-        score,
-        max_score,
-        status,
-        finished_at,
-        test:test_id ( title )
-      `)
-      .neq('status', 'in_progress')
-      .order('finished_at', { ascending: false });
-
-    if (error) {
-      console.error('Ошибка загрузки результатов:', error);
-      setLoading(false);
-      return;
-    }
-
-    // Получаем имена учеников из profiles
-    const enriched = await Promise.all(
-      (data || []).map(async (item: any) => {
-        let studentName = 'Неизвестно';
-        if (item.user_id) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', item.user_id)
-            .single();
-          if (profile?.full_name) studentName = profile.full_name;
-        }
-        return {
-          ...item,
-          studentName,
-          testTitle: item.test?.title || 'Тест удалён',
-        };
-      })
-    );
-
-    setResults(enriched);
-    setLoading(false);
-  };
-
-  const columns = [
-    {
-      title: 'Ученик',
-      dataIndex: 'studentName',
-      key: 'studentName',
-    },
-    {
-      title: 'Тест',
-      dataIndex: 'testTitle',
-      key: 'testTitle',
-    },
-    {
-      title: 'Балл',
-      key: 'score',
-      render: (_: any, record: any) => `${record.score}/${record.max_score}`,
-    },
-    {
-      title: 'Статус',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
-        const color = status === 'passed' ? 'green' : status === 'failed' ? 'red' : 'orange';
-        const text = status === 'passed' ? 'Сдал' : status === 'failed' ? 'Не сдал' : 'Время истекло';
-        return <Tag color={color}>{text}</Tag>;
-      },
-    },
-    {
-      title: 'Дата завершения',
-      dataIndex: 'finished_at',
-      key: 'finished_at',
-      render: (date: string) => date ? new Date(date).toLocaleString() : '—',
-    },
-    {
-      title: 'Действия',
-      key: 'actions',
-      render: (_: any, record: any) => (
-        <Link href={`/dashboard/teacher/results/${record.id}`}>
-          <Button type="link" icon={<EyeOutlined />}>Подробнее</Button>
-        </Link>
-      ),
-    },
-  ];
+  if (!user) return <div>Загрузка...</div>;
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={2}>Результаты тестов</Title>
-      <Table
-        dataSource={results}
-        columns={columns}
-        loading={loading}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-      />
+    <div>
+      <Title level={2} style={titleStyle}>Кабинет педагога</Title>
+      <p style={textStyle}>Добро пожаловать, {fullName || user.email}!</p>
+      <Space orientation="vertical" size="middle" style={{ marginTop: 20 }}>
+        <Link href="/dashboard/teacher/assign">
+          <Button type="primary" size="large">Назначить тест</Button>
+        </Link>
+        <Link href="/dashboard/teacher/results">
+          <Button size="large">Результаты тестов</Button>
+        </Link>
+      </Space>
     </div>
   );
 }

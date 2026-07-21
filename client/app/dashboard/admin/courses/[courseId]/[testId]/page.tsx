@@ -8,6 +8,12 @@ import { PlusOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
 interface Option {
   text: string;
   isCorrect: boolean;
@@ -27,7 +33,6 @@ export default function TestQuestionsPage() {
   const segments = pathname.split('/');
   const testId = segments[segments.length - 1];
 
-  const [testExists, setTestExists] = useState<boolean | null>(null); // null = загрузка
   const [testTitle, setTestTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,32 +47,16 @@ export default function TestQuestionsPage() {
   const [normRef, setNormRef] = useState('');
 
   useEffect(() => {
-    if (!testId || testId === 'undefined' || testId.length < 10) {
-      message.error('Некорректный идентификатор теста');
-      setTestExists(false);
-      return;
+    if (testId && testId !== 'undefined' && testId.length > 10) {
+      fetchTest();
+      fetchQuestions();
     }
-    console.log('Текущий testId:', testId);
-    fetchTest();
   }, [testId]);
 
   const fetchTest = async () => {
-    const { data, error } = await supabase
-      .from('tests')
-      .select('id, title')
-      .eq('id', testId)
-      .maybeSingle(); // вернёт null, если не найдено, без ошибки 406
-
-    if (error || !data) {
-      console.error('Тест не найден:', error);
-      message.error('Тест не найден. Возможно, он был удалён.');
-      setTestExists(false);
-      return;
-    }
-
-    setTestTitle(data.title);
-    setTestExists(true);
-    fetchQuestions();
+    const { data } = await supabase.from('tests').select('title').eq('id', testId).maybeSingle();
+    if (data) setTestTitle(data.title);
+    else message.error('Тест не найден');
   };
 
   const fetchQuestions = async () => {
@@ -93,9 +82,7 @@ export default function TestQuestionsPage() {
   const updateOptionCorrect = (index: number, isCorrect: boolean) => {
     const newOptions = [...options];
     if (questionType === 'single' && isCorrect) {
-      newOptions.forEach((opt, i) => {
-        opt.isCorrect = i === index;
-      });
+      newOptions.forEach((opt, i) => { opt.isCorrect = i === index; });
     } else {
       newOptions[index].isCorrect = isCorrect;
     }
@@ -117,44 +104,23 @@ export default function TestQuestionsPage() {
       norm_ref: normRef,
     });
 
-    if (error) {
-      message.error('Ошибка: ' + error.message);
-    } else {
+    if (error) message.error('Ошибка: ' + error.message);
+    else {
       message.success('Вопрос создан!');
       setIsModalOpen(false);
       setQuestionText('');
       setQuestionType('single');
-      setOptions([
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-      ]);
+      setOptions([{ text: '', isCorrect: false }, { text: '', isCorrect: false }]);
       setExplanation('');
       setNormRef('');
       fetchQuestions();
     }
   };
 
-  // Пока идёт проверка существования теста
-  if (testExists === null) {
-    return <div style={{ padding: 24 }}>Проверка теста...</div>;
-  }
-
-  // Тест не существует – показываем сообщение
-  if (testExists === false) {
-    return (
-      <div style={{ padding: 24 }}>
-        <Title level={2}>Тест не найден</Title>
-        <p>Возможно, он был удалён или ссылка некорректна.</p>
-        <Button onClick={() => window.history.back()}>Вернуться назад</Button>
-      </div>
-    );
-  }
-
-  // Тест существует – отображаем редактор вопросов
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Тест: {testTitle}</Title>
-      <Title level={3} style={{ marginTop: 0 }}>Вопросы</Title>
+      <Title level={2} style={titleStyle}>Тест: {testTitle}</Title>
+      <Title level={3} style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)', marginTop: 0 }}>Вопросы</Title>
 
       <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>

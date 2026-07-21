@@ -8,6 +8,12 @@ import Link from 'next/link';
 
 const { Title } = Typography;
 
+const titleStyle: React.CSSProperties = {
+  color: '#ffffff',
+  textShadow: '0 2px 8px rgba(0, 86, 185, 0.6), 0 0 2px rgba(0,0,0,0.8)',
+  marginBottom: 24,
+};
+
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,8 +44,8 @@ export default function AdminCoursesPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Title level={2}>Управление курсами</Title>
-      
+      <Title level={2} style={titleStyle}>Управление курсами</Title>
+
       <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
           Добавить курс
@@ -60,16 +66,16 @@ export default function AdminCoursesPage() {
         onOk={handleCreateCourse}
         onCancel={() => setIsModalOpen(false)}
       >
-        <Input 
-          placeholder="Название курса" 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-          style={{ marginBottom: 12 }} 
+        <Input
+          placeholder="Название курса"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          style={{ marginBottom: 12 }}
         />
-        <Input.TextArea 
-          placeholder="Описание" 
-          value={description} 
-          onChange={(e) => setDescription(e.target.value)} 
+        <Input.TextArea
+          placeholder="Описание"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
         />
       </Modal>
     </div>
