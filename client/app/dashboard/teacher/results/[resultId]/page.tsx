@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Card, Typography, Space, Tag, Button, Descriptions, Collapse } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import Link from 'next/link';
@@ -35,9 +35,8 @@ interface Answer {
 }
 
 export default function ResultDetailPage() {
-  const pathname = usePathname();
-  const segments = pathname.split('/');
-  const resultId = segments[segments.length - 1];
+  const params = useParams();
+  const resultId = params.resultId as string;
 
   const [result, setResult] = useState<any>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -126,9 +125,9 @@ export default function ResultDetailPage() {
       ),
       children: (
         <div>
-          <p><Text strong style={{ color: '#fff' }}>Тип вопроса:</Text> <Text>{q.question_type === 'single' ? 'Одиночный' : q.question_type === 'multiple' ? 'Множественный' : 'Открытый'}</Text></p>
-          <p><Text strong style={{ color: '#fff' }}>Ответ ученика:</Text> {renderAnswer(q, answer)}</p>
-          <p><Text strong style={{ color: '#fff' }}>Правильный ответ:</Text> {renderCorrectAnswer(q)}</p>
+          <p><Text strong>Тип вопроса:</Text> {q.question_type === 'single' ? 'Одиночный' : q.question_type === 'multiple' ? 'Множественный' : 'Открытый'}</p>
+          <p><Text strong>Ответ ученика:</Text> {renderAnswer(q, answer)}</p>
+          <p><Text strong>Правильный ответ:</Text> {renderCorrectAnswer(q)}</p>
           {q.explanation && <p><Text type="secondary">Пояснение: {q.explanation}</Text></p>}
         </div>
       ),
@@ -156,4 +155,8 @@ export default function ResultDetailPage() {
       <Collapse accordion items={collapseItems} />
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  return [];
 }

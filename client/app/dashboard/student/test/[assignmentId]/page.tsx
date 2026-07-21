@@ -106,7 +106,6 @@ export default function TakeTestPage() {
       return;
     }
 
-    // Проверяем существующую попытку
     const { data: existingResult } = await supabase
       .from('test_results')
       .select('id, status, answers, score, max_score')
@@ -475,4 +474,8 @@ export default function TakeTestPage() {
       </div>
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  return [];
 }

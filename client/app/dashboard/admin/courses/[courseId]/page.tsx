@@ -199,7 +199,6 @@ export default function CourseManagePage() {
         { key: 'materials', label: 'Материалы', children: materialsContent },
       ]} />
 
-      {/* Модальное окно теста */}
       <Modal
         title={editingTest ? 'Редактировать тест' : 'Создать тест'}
         open={isTestModalOpen}
@@ -218,7 +217,6 @@ export default function CourseManagePage() {
         <Input type="number" placeholder="Проходной балл (%)" value={passingScore} onChange={(e) => setPassingScore(Number(e.target.value))} />
       </Modal>
 
-      {/* Модальное окно материала */}
       <Modal
         title="Добавить материал"
         open={isMaterialModalOpen}
@@ -233,4 +231,9 @@ export default function CourseManagePage() {
       </Modal>
     </div>
   );
+}
+
+// Эта функция нужна для статического экспорта
+export async function generateStaticParams() {
+  return [];
 }

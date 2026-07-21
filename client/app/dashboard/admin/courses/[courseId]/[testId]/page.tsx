@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button, Card, Modal, Input, Select, message, Space, Typography, Radio, Checkbox, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 
@@ -29,9 +29,8 @@ interface Question {
 }
 
 export default function TestQuestionsPage() {
-  const pathname = usePathname();
-  const segments = pathname.split('/');
-  const testId = segments[segments.length - 1];
+  const params = useParams();
+  const testId = params.testId as string;
 
   const [testTitle, setTestTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -54,6 +53,7 @@ export default function TestQuestionsPage() {
   const fetchTest = async () => {
     const { data } = await supabase.from('tests').select('title').eq('id', testId).maybeSingle();
     if (data) setTestTitle(data.title);
+    else message.error('Тест не найден');
   };
 
   const fetchQuestions = async () => {
@@ -97,6 +97,8 @@ export default function TestQuestionsPage() {
   };
 
   const handleCreateOrUpdate = async () => {
+    if (!testId) { message.error('Не удалось определить тест'); return; }
+
     const payload = {
       test_id: testId,
       question_text: questionText,
@@ -197,4 +199,9 @@ export default function TestQuestionsPage() {
       </Modal>
     </div>
   );
+}
+
+// Обязательно для статического экспорта
+export async function generateStaticParams() {
+  return [];
 }
