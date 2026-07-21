@@ -2,7 +2,7 @@
 
 import { supabase } from '@/utils/supabase/client';
 import { Button, Layout, Menu, Space, Typography } from 'antd';
-import { LogoutOutlined, UserOutlined, BookOutlined, FileTextOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, BookOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -21,7 +21,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       icon: <BookOutlined />,
       label: <Link href="/dashboard/student">Мои тесты</Link>,
     },
-    // Можно добавить другие пункты меню
   ];
 
   return (

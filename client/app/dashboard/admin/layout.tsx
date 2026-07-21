@@ -47,7 +47,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           />
         </div>
         <Space>
-          <Button icon={<UserOutlined />} type="text">Профиль</Button>
+          <Link href="/dashboard/admin/profile">
+            <Button icon={<UserOutlined />} type="text">Профиль</Button>
+          </Link>
           <Button icon={<LogoutOutlined />} type="text" onClick={handleSignOut}>Выйти</Button>
         </Space>
       </Header>
