@@ -131,7 +131,3 @@ function AssignmentLink({ testId }: { testId: string }) {
     </Link>
   );
 }
-
-export async function generateStaticParams() {
-  return [];
-}

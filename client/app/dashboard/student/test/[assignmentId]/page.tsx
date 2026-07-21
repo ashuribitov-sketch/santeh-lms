@@ -475,7 +475,3 @@ export default function TakeTestPage() {
     </div>
   );
 }
-
-export async function generateStaticParams() {
-  return [];
-}

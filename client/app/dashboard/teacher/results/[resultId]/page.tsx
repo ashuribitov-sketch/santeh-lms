@@ -156,7 +156,3 @@ export default function ResultDetailPage() {
     </div>
   );
 }
-
-export async function generateStaticParams() {
-  return [];
-}

@@ -200,8 +200,3 @@ export default function TestQuestionsPage() {
     </div>
   );
 }
-
-// Обязательно для статического экспорта
-export async function generateStaticParams() {
-  return [];
-}

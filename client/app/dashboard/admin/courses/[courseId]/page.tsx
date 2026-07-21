@@ -232,8 +232,3 @@ export default function CourseManagePage() {
     </div>
   );
 }
-
-// Эта функция нужна для статического экспорта
-export async function generateStaticParams() {
-  return [];
-}
