@@ -2,7 +2,7 @@
 
 import { supabase } from '@/utils/supabase/client';
 import { Button, Layout, Menu, Space, Typography } from 'antd';
-import { LogoutOutlined, UserOutlined, BookOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, BookOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -20,6 +20,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       key: '/dashboard/student',
       icon: <BookOutlined />,
       label: <Link href="/dashboard/student">Мои тесты</Link>,
+    },
+    {
+      key: '/dashboard/student/game',
+      icon: <ThunderboltOutlined />,
+      label: <Link href="/dashboard/student/game">Игра</Link>,
     },
   ];
 
