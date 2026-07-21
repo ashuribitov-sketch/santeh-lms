@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Здесь можно оставить пустым или добавить свои настройки, не связанные с экспортом
+  reactStrictMode: false, // Отключаем строгий режим, чтобы избежать двойного монтирования
 };
 
 export default nextConfig;
