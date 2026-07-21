@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { Button, Card, Modal, Input, message, Space, Typography } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Button, Card, Modal, Input, message, Space, Typography, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Title } = Typography;
@@ -17,6 +17,7 @@ const titleStyle: React.CSSProperties = {
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -29,17 +30,35 @@ export default function AdminCoursesPage() {
     setCourses(data || []);
   };
 
-  const handleCreateCourse = async () => {
-    const { error } = await supabase.from('courses').insert({ title, description });
-    if (error) {
-      message.error('Ошибка: ' + error.message);
+  const handleCreateOrUpdate = async () => {
+    if (editingCourse) {
+      const { error } = await supabase.from('courses').update({ title, description }).eq('id', editingCourse.id);
+      if (error) message.error('Ошибка: ' + error.message);
+      else message.success('Курс обновлён!');
     } else {
-      message.success('Курс создан!');
-      setIsModalOpen(false);
-      setTitle('');
-      setDescription('');
-      fetchCourses();
+      const { error } = await supabase.from('courses').insert({ title, description });
+      if (error) message.error('Ошибка: ' + error.message);
+      else message.success('Курс создан!');
     }
+    setIsModalOpen(false);
+    setEditingCourse(null);
+    setTitle('');
+    setDescription('');
+    fetchCourses();
+  };
+
+  const handleEdit = (course: any) => {
+    setEditingCourse(course);
+    setTitle(course.title);
+    setDescription(course.description || '');
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (courseId: string) => {
+    const { error } = await supabase.from('courses').delete().eq('id', courseId);
+    if (error) message.error('Ошибка: ' + error.message);
+    else message.success('Курс удалён!');
+    fetchCourses();
   };
 
   return (
@@ -47,23 +66,41 @@ export default function AdminCoursesPage() {
       <Title level={2} style={titleStyle}>Управление курсами</Title>
 
       <Space orientation="vertical" size="large" style={{ width: '100%', marginTop: 20 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingCourse(null); setTitle(''); setDescription(''); setIsModalOpen(true); }}>
           Добавить курс
         </Button>
 
         {courses.map((course) => (
-          <Link href={`/dashboard/admin/courses/${course.id}`} key={course.id}>
-            <Card title={course.title} style={{ width: '100%', cursor: 'pointer' }}>
+          <Card
+            key={course.id}
+            title={course.title}
+            style={{ width: '100%' }}
+            extra={
+              <Space>
+                <Button type="text" icon={<EditOutlined />} onClick={(e) => { e.stopPropagation(); handleEdit(course); }} />
+                <Popconfirm
+                  title="Удалить курс?"
+                  description="Все тесты, вопросы и материалы будут удалены."
+                  onConfirm={() => handleDelete(course.id)}
+                  okText="Да"
+                  cancelText="Нет"
+                >
+                  <Button type="text" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
+                </Popconfirm>
+              </Space>
+            }
+          >
+            <Link href={`/dashboard/admin/courses/${course.id}`}>
               <p>{course.description || 'Описание отсутствует'}</p>
-            </Card>
-          </Link>
+            </Link>
+          </Card>
         ))}
       </Space>
 
       <Modal
-        title="Создать курс"
+        title={editingCourse ? 'Редактировать курс' : 'Создать курс'}
         open={isModalOpen}
-        onOk={handleCreateCourse}
+        onOk={handleCreateOrUpdate}
         onCancel={() => setIsModalOpen(false)}
       >
         <Input

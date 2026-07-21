@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { usePathname } from 'next/navigation';
-import { Button, Card, Modal, Input, Select, message, Space, Typography, Tabs, Upload } from 'antd';
-import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, Card, Modal, Input, Select, message, Space, Typography, Tabs, Upload, Popconfirm } from 'antd';
+import { PlusOutlined, UploadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Title } = Typography;
@@ -22,16 +22,17 @@ export default function CourseManagePage() {
 
   const [courseTitle, setCourseTitle] = useState('');
 
-  // === Тесты ===
+  // Тесты
   const [tests, setTests] = useState<any[]>([]);
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [editingTest, setEditingTest] = useState<any | null>(null);
   const [testTitle, setTestTitle] = useState('');
   const [testDescription, setTestDescription] = useState('');
   const [category, setCategory] = useState('1-3');
   const [timeLimit, setTimeLimit] = useState(600);
   const [passingScore, setPassingScore] = useState(70);
 
-  // === Материалы ===
+  // Материалы
   const [materials, setMaterials] = useState<any[]>([]);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialTitle, setMaterialTitle] = useState('');
@@ -57,22 +58,49 @@ export default function CourseManagePage() {
     setTests(data || []);
   };
 
-  const handleCreateTest = async () => {
-    const { error } = await supabase.from('tests').insert({
-      course_id: courseId,
-      title: testTitle,
-      description: testDescription,
-      category,
-      time_limit_seconds: timeLimit,
-      passing_score: passingScore,
-    });
-    if (error) message.error('Ошибка: ' + error.message);
-    else {
-      message.success('Тест создан!');
-      setIsTestModalOpen(false);
-      setTestTitle(''); setTestDescription(''); setCategory('1-3'); setTimeLimit(600); setPassingScore(70);
-      fetchTests();
+  const handleCreateOrUpdateTest = async () => {
+    if (editingTest) {
+      const { error } = await supabase.from('tests').update({
+        title: testTitle,
+        description: testDescription,
+        category,
+        time_limit_seconds: timeLimit,
+        passing_score: passingScore,
+      }).eq('id', editingTest.id);
+      if (error) message.error('Ошибка: ' + error.message);
+      else message.success('Тест обновлён!');
+    } else {
+      const { error } = await supabase.from('tests').insert({
+        course_id: courseId,
+        title: testTitle,
+        description: testDescription,
+        category,
+        time_limit_seconds: timeLimit,
+        passing_score: passingScore,
+      });
+      if (error) message.error('Ошибка: ' + error.message);
+      else message.success('Тест создан!');
     }
+    setIsTestModalOpen(false);
+    setEditingTest(null);
+    setTestTitle(''); setTestDescription(''); setCategory('1-3'); setTimeLimit(600); setPassingScore(70);
+    fetchTests();
+  };
+
+  const handleEditTest = (test: any) => {
+    setEditingTest(test);
+    setTestTitle(test.title);
+    setTestDescription(test.description || '');
+    setCategory(test.category);
+    setTimeLimit(test.time_limit_seconds);
+    setPassingScore(test.passing_score);
+    setIsTestModalOpen(true);
+  };
+
+  const handleDeleteTest = async (testId: string) => {
+    const { error } = await supabase.from('tests').delete().eq('id', testId);
+    if (error) message.error('Ошибка: ' + error.message);
+    else { message.success('Тест удалён!'); fetchTests(); }
   };
 
   // ------ МАТЕРИАЛЫ ------
@@ -82,26 +110,14 @@ export default function CourseManagePage() {
   };
 
   const handleCreateMaterial = async () => {
-    if (!file) {
-      message.warning('Выберите файл для загрузки');
-      return;
-    }
+    if (!file) { message.warning('Выберите файл'); return; }
     const safeFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
     const fileName = `${Date.now()}_${safeFileName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('course-materials')
-      .upload(fileName, file);
+    const { error: uploadError } = await supabase.storage.from('course-materials').upload(fileName, file);
+    if (uploadError) { message.error('Ошибка загрузки: ' + uploadError.message); return; }
 
-    if (uploadError) {
-      message.error('Ошибка загрузки файла: ' + uploadError.message);
-      return;
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from('course-materials')
-      .getPublicUrl(fileName);
-
+    const { data: publicUrlData } = supabase.storage.from('course-materials').getPublicUrl(fileName);
     const fileUrl = publicUrlData.publicUrl;
 
     const { error: insertError } = await supabase.from('materials').insert({
@@ -112,7 +128,6 @@ export default function CourseManagePage() {
       file_name: file.name,
       file_type: file.name.split('.').pop()?.toLowerCase() || '',
     });
-
     if (insertError) message.error('Ошибка сохранения: ' + insertError.message);
     else {
       message.success('Материал добавлен!');
@@ -122,18 +137,35 @@ export default function CourseManagePage() {
     }
   };
 
+  const handleDeleteMaterial = async (materialId: string) => {
+    const { error } = await supabase.from('materials').delete().eq('id', materialId);
+    if (error) message.error('Ошибка: ' + error.message);
+    else { message.success('Материал удалён!'); fetchMaterials(); }
+  };
+
   const testsContent = (
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsTestModalOpen(true)}>
+      <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTest(null); setIsTestModalOpen(true); }}>
         Добавить тест
       </Button>
       {tests.map((test) => (
-        <Link href={`/dashboard/admin/courses/${courseId}/${test.id}`} key={test.id}>
-          <Card title={test.title} style={{ cursor: 'pointer' }}>
+        <Card
+          key={test.id}
+          title={test.title}
+          extra={
+            <Space>
+              <Button type="text" icon={<EditOutlined />} onClick={(e) => { e.stopPropagation(); handleEditTest(test); }} />
+              <Popconfirm title="Удалить тест и все вопросы?" onConfirm={() => handleDeleteTest(test.id)} okText="Да" cancelText="Нет">
+                <Button type="text" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
+              </Popconfirm>
+            </Space>
+          }
+        >
+          <Link href={`/dashboard/admin/courses/${courseId}/${test.id}`}>
             <p><b>Описание:</b> {test.description || '—'}</p>
             <p><b>Разряд:</b> {test.category} | <b>Время:</b> {test.time_limit_seconds} сек | <b>Проходной:</b> {test.passing_score}%</p>
-          </Card>
-        </Link>
+          </Link>
+        </Card>
       ))}
     </Space>
   );
@@ -144,7 +176,15 @@ export default function CourseManagePage() {
         Добавить материал
       </Button>
       {materials.map((m) => (
-        <Card key={m.id} title={m.title}>
+        <Card
+          key={m.id}
+          title={m.title}
+          extra={
+            <Popconfirm title="Удалить материал?" onConfirm={() => handleDeleteMaterial(m.id)} okText="Да" cancelText="Нет">
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          }
+        >
           <p>{m.description}</p>
           <p>Файл: <a href={m.file_url} target="_blank" rel="noopener noreferrer">{m.file_name}</a></p>
         </Card>
@@ -160,11 +200,11 @@ export default function CourseManagePage() {
         { key: 'materials', label: 'Материалы', children: materialsContent },
       ]} />
 
-      {/* Модальное окно для создания теста */}
+      {/* Модальное окно теста */}
       <Modal
-        title="Создать тест"
+        title={editingTest ? 'Редактировать тест' : 'Создать тест'}
         open={isTestModalOpen}
-        onOk={handleCreateTest}
+        onOk={handleCreateOrUpdateTest}
         onCancel={() => setIsTestModalOpen(false)}
       >
         <Input placeholder="Название теста" value={testTitle} onChange={(e) => setTestTitle(e.target.value)} style={{ marginBottom: 12 }} />
@@ -179,7 +219,7 @@ export default function CourseManagePage() {
         <Input type="number" placeholder="Проходной балл (%)" value={passingScore} onChange={(e) => setPassingScore(Number(e.target.value))} />
       </Modal>
 
-      {/* Модальное окно для добавления материала */}
+      {/* Модальное окно материала */}
       <Modal
         title="Добавить материал"
         open={isMaterialModalOpen}
@@ -188,11 +228,7 @@ export default function CourseManagePage() {
       >
         <Input placeholder="Название материала" value={materialTitle} onChange={(e) => setMaterialTitle(e.target.value)} style={{ marginBottom: 12 }} />
         <Input.TextArea placeholder="Описание" value={materialDescription} onChange={(e) => setMaterialDescription(e.target.value)} style={{ marginBottom: 12 }} />
-        <Upload
-          beforeUpload={(file) => { setFile(file); return false; }}
-          onRemove={() => setFile(null)}
-          maxCount={1}
-        >
+        <Upload beforeUpload={(file) => { setFile(file); return false; }} onRemove={() => setFile(null)} maxCount={1}>
           <Button icon={<UploadOutlined />}>Выбрать файл</Button>
         </Upload>
       </Modal>
