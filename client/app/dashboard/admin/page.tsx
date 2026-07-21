@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Button } from 'antd';
+import { Button, Typography } from 'antd';
 import Link from 'next/link';
+
+const { Title } = Typography;
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -21,23 +23,17 @@ export default function AdminDashboard() {
     getUser();
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  };
-
   if (!user) return <div>Загрузка...</div>;
 
   return (
-    <div style={{ maxWidth: 600, margin: '50px auto' }}>
-      <h1>Кабинет администратора</h1>
+    <div>
+      <Title level={2}>Кабинет администратора</Title>
       <p>Добро пожаловать, {user.email}!</p>
       <div style={{ margin: '20px 0' }}>
         <Link href="/dashboard/admin/courses">
           <Button type="primary">Управление курсами и тестами</Button>
         </Link>
       </div>
-      <Button onClick={handleSignOut}>Выйти</Button>
     </div>
   );
 }

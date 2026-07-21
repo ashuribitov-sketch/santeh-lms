@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 import { Button, Card, Modal, Input, message, Space, Typography } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 
 const { Title } = Typography;
 
@@ -45,9 +46,11 @@ export default function AdminCoursesPage() {
         </Button>
 
         {courses.map((course) => (
-          <Card key={course.id} title={course.title} style={{ width: '100%' }}>
-            <p>{course.description || 'Описание отсутствует'}</p>
-          </Card>
+          <Link href={`/dashboard/admin/courses/${course.id}`} key={course.id}>
+            <Card title={course.title} style={{ width: '100%', cursor: 'pointer' }}>
+              <p>{course.description || 'Описание отсутствует'}</p>
+            </Card>
+          </Link>
         ))}
       </Space>
 

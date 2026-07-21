@@ -17,7 +17,6 @@ export default function TeacherResultsPage() {
   }, []);
 
   const fetchResults = async () => {
-    // Запрос БЕЗ user:user_id (email) – только user_id
     const { data, error } = await supabase
       .from('test_results')
       .select(`
@@ -38,7 +37,6 @@ export default function TeacherResultsPage() {
       return;
     }
 
-    // Получаем имена учеников из profiles
     const enriched = await Promise.all(
       (data || []).map(async (item: any) => {
         let studentName = 'Неизвестно';

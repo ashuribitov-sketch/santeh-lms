@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const role = searchParams.get('role') || 'student';
@@ -21,6 +22,7 @@ function RegisterForm() {
       options: {
         data: {
           role: 'student',
+          full_name: fullName, // передаём ФИО
         },
       },
     });
@@ -35,7 +37,6 @@ function RegisterForm() {
       return;
     }
 
-    // Устанавливаем сессию, чтобы пользователь стал авторизован
     if (data.session) {
       await supabase.auth.setSession({
         access_token: data.session.access_token,
@@ -43,12 +44,9 @@ function RegisterForm() {
       });
     }
 
-    // После регистрации ученик всегда попадает на дашборд ученика
-    // Роль student гарантирована, поэтому не делаем лишний запрос профиля
     window.location.href = '/dashboard/student';
   };
 
-  // Если в URL другая роль — ничего не показываем (редирект на главную должен быть на уровне middleware)
   if (role !== 'student') {
     return null;
   }
@@ -57,6 +55,16 @@ function RegisterForm() {
     <div style={{ maxWidth: 400, margin: '50px auto' }}>
       <h1>Регистрация ученика</h1>
       <form onSubmit={handleRegister}>
+        <div>
+          <label>ФИО:</label>
+          <input
+            type="text"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            placeholder="Иванов Иван Иванович"
+          />
+        </div>
         <div>
           <label>Email:</label>
           <input
